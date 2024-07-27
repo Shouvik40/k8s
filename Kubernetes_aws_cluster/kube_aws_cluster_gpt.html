@@ -1,0 +1,106 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Installation Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #2c3e50; }
+        h2 { color: #34495e; }
+        ul { margin: 10px 0; }
+        code { background-color: #f4f4f4; padding: 5px; border-radius: 3px; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<h1>Kubernetes Installation on AWS Linux Instances</h1>
+<p>This guide outlines the steps to install Kubernetes using <code>kubeadm</code> on AWS Linux instances. It covers setting up a Kubernetes cluster with one master node and two worker nodes.</p>
+
+<h2>Table of Contents</h2>
+<ul>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#update-and-install-docker">1. Update and Install Docker</a></li>
+    <li><a href="#install-kubernetes-components">2. Install Kubernetes Components</a></li>
+    <li><a href="#initialize-the-kubernetes-cluster">3. Initialize the Kubernetes Cluster</a></li>
+    <li><a href="#install-a-pod-network">4. Install a Pod Network</a></li>
+    <li><a href="#join-worker-nodes-to-the-cluster">5. Join Worker Nodes to the Cluster</a></li>
+    <li><a href="#verify-the-cluster">6. Verify the Cluster</a></li>
+    <li><a href="#additional-notes">Additional Notes</a></li>
+</ul>
+
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+    <li><strong>Instances:</strong>
+        <ul>
+            <li><strong>Master Node:</strong> <code>master</code></li>
+            <li><strong>Worker Nodes:</strong> <code>node1</code> and <code>node2</code></li>
+        </ul>
+    </li>
+    <li><strong>Operating System:</strong> AWS Linux</li>
+</ul>
+
+<h2 id="update-and-install-docker">1. Update and Install Docker</h2>
+
+<h3>On All Nodes</h3>
+<pre><code>sudo su
+yum update -y
+yum install -y docker
+systemctl start docker
+systemctl enable docker</code></pre>
+
+<h2 id="install-kubernetes-components">2. Install Kubernetes Components</h2>
+
+<h3>Add Kubernetes Repository</h3>
+<pre><code>sudo tee /etc/yum.repos.d/kubernetes.repo &lt;&lt;EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF</code></pre>
+
+<h3>Install <code>kubeadm</code>, <code>kubelet</code>, and <code>kubectl</code></h3>
+<pre><code>yum install -y kubelet kubeadm kubectl
+systemctl enable kubelet
+systemctl start kubelet</code></pre>
+
+<h2 id="initialize-the-kubernetes-cluster">3. Initialize the Kubernetes Cluster</h2>
+
+<h3>On the Master Node</h3>
+<pre><code>sudo kubeadm init --pod-network-cidr=10.244.0.0/16</code></pre>
+
+<h3>Post-Initialization Steps</h3>
+<pre><code>mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config</code></pre>
+
+<h2 id="install-a-pod-network">4. Install a Pod Network</h2>
+To enable communication between pods, install a network plugin. For example, to install Flannel:
+<pre><code>kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</code></pre>
+
+<h2 id="join-worker-nodes-to-the-cluster">5. Join Worker Nodes to the Cluster</h2>
+
+<h3>On Worker Nodes</h3>
+<pre><code>sudo kubeadm join &lt;master-ip&gt;:&lt;master-port&gt; --token &lt;token&gt; --discovery-token-ca-cert-hash sha256:&lt;hash&gt;</code></pre>
+Replace <code>&lt;master-ip&gt;</code>, <code>&lt;master-port&gt;</code>, <code>&lt;token&gt;</code>, and <code>&lt;hash&gt;</code> with the values provided.
+
+<h2 id="verify-the-cluster">6. Verify the Cluster</h2>
+
+<h3>On the Master Node</h3>
+<pre><code>kubectl get nodes</code></pre>
+
+<h2 id="additional-notes">Additional Notes</h2>
+<ul>
+    <li><strong>Check Available Repositories:</strong> Use the command <code>yum repolist</code> to list available repositories if needed.</li>
+    <li><strong>Kubernetes Documentation:</strong> For further information and advanced configurations, refer to the <a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/">Kubernetes documentation</a>.</li>
+</ul>
+
+</body>
+</html>
