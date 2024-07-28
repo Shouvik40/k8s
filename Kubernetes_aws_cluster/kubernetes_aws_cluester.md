@@ -3,7 +3,7 @@ sudo su
 yum install docker
 systemctl start docker
  
-<!-- Install Kubernetes from https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/  -->
+<!-- Install kubeadm from https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/  -->
 <!-- Also check -->
 yum repolist
 kubeadm init 
